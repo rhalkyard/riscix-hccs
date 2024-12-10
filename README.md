@@ -1,4 +1,4 @@
-# Rough guide to bootstrapping RISC iX onto HCCS IDE cards
+# Rough guide to bootstrapping RISC iX for an A3000 with HCCS IDE card
 
 Matt Evans has done some fantastic work
 [adding IDE support to RISC iX](https://github.com/evansm7/riscix_ide), and some time ago, I 
@@ -9,7 +9,7 @@ bootstrapping a RISC iX installation onto it is quite an ordeal, so I thought I
 ought to document it.
 
 Aside from the HCCS-specific partitioning aspect, it should also give some
-more general hints guide to bootstrapping a “real hardware” RISC iX
+more general hints about bootstrapping a “real hardware” RISC iX
 installation.
 
 You will need: 
@@ -60,6 +60,9 @@ modifications to make it possible:
 To build:
 
 ```bash
+# Install development packages for wxWidgets, SDL2, ALSA, libslirp and zlib.
+# Refer to your distro's package manager for how to do this.
+
 git clone --branch rhalkyard https://github.com/rhalkyard/arculator
 cd arculator
 autoreconf -vif
@@ -109,7 +112,8 @@ Open the maintenance menu again and choose "Single User." After a few
 moments, the RISC OS desktop will go away and RISC iX will dump you into a
 single-user-mode shell.
 
-Edit the following configuration files:
+Edit the following configuration files. Editors at your disposal include vi,
+and microEMACS (`uemacs`):
 
 `/etc/rc.net`:
 
@@ -270,20 +274,20 @@ partition, and clone the RISC iX installation from your SCSI drive onto it.
 ```sh
 # Create block devices
 mknod /dev/id0a b 40 0  # root
-mknod /dev/id0b b 40 1  # swap
-# mknod /dev/id0c b 40 2 # another partition
-# mknod /dev/id0d b 40 3 # yet another partition
+mknod /dev/id0S b 40 1  # swap
+# mknod /dev/id0b b 40 2 # another partition
+# mknod /dev/id0c b 40 3 # yet another partition
 
 # Create fake raw devices for each of the above partitions. ecide does not 
 # support raw access, but things like fsck get upset if they don't exist.
 ln -s /dev/id0a /dev/rid0a
-ln -s /dev/id0b /dev/rid0b
+ln -s /dev/id0S /dev/rid0b
 # etc. etc.
 
 # Create filesystems on your root (and other non-swap) partitions
 #       Device      Size in 512 byte blocks     Heads   Sectors per track
 mkfs    /dev/id0a   483840                      16      63
-# mkfs   /dev/id0c  <size>                      16      63
+# mkfs   /dev/id0b  <size>                      16      63
 
 # Mount your new root FS
 mount /dev/id0a /mnt
@@ -329,7 +333,9 @@ the ST506 code path, so that it calls IDEFS instead of ADFS.
 ## Finally booting RISC iX!
 
 Remove the SCSI podule from the external slot of the A3000. You might want to
-put an Ethernet II card back in its place.
+put an Ethernet III card back in its place (if you don't, RISC iX will only
+come up in single-user until you set `STANDALONE=TRUE` in
+`/etc/rc.net`).
 
 Run the following commands:
 
@@ -350,3 +356,14 @@ Now you should be able to boot RISC iX using your patched boot loader! If so,
 use a USB-to-IDE interface to write the disc image back to your A3000's hard
 drive, and voilá! Your A3000 can now run an ancient Unix excruciatingly
 slowly! Why did you want to do this again?
+
+## Other notes and neat tricks
+
+Don't use the AEH50 Ethernet II card. Its emulation appears to be buggy,
+and drops received packets.
+
+In RISC iX, press BREAK key to select between virtual consoles.
+
+In a text console, press F3 to bring up a settings menu.
+
+X11 is unusably slow, but you can launch it with `startx`.
