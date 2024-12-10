@@ -335,7 +335,7 @@ the ST506 code path, so that it calls IDEFS instead of ADFS.
 Remove the SCSI podule from the external slot of the A3000. You might want to
 put an Ethernet III card back in its place (if you don't, RISC iX will only
 come up in single-user until you set `STANDALONE=TRUE` in
-`/etc/rc.net`).
+`/etc/rc.config`).
 
 Run the following commands:
 
@@ -359,11 +359,20 @@ slowly! Why did you want to do this again?
 
 ## Other notes and neat tricks
 
-Don't use the AEH50 Ethernet II card. Its emulation appears to be buggy,
-and drops received packets.
+Don't use the AEH50 Ethernet II card. Its emulation appears to be buggy, with
+received packets occasionally being dropped.
 
-In RISC iX, press BREAK key to select between virtual consoles.
+In RISC iX, press the BREAK key to switch between virtual consoles.
 
 In a text console, press F3 to bring up a settings menu.
 
-X11 is unusably slow, but you can launch it with `startx`.
+Expect it to be incredibly, unbelievaby, almost unusably slow. Part of this
+is just that it was always a bit sluggish even on high-end systems, the IDE
+driver causes further performance issues - most Archimedes IDE hardware does
+not connect the `/IRQ` line, and so the driver must do polled I/O. Anything
+that causes a lot of swap activity (and with only 4MB of RAM and an
+enormous 32k page size, you'll be doing a lot of swapping), will bring the
+system to a crawl.
+
+X11 is installed and can be started with `startx`, but it only really serves
+as an extreme example of the above performance issues.
