@@ -376,3 +376,16 @@ system to a crawl.
 
 X11 is installed and can be started with `startx`, but it only really serves
 as an extreme example of the above performance issues.
+
+### Video Sync
+
+If you get a garbled screen (or no sync at all) in RISC iX, try running
+`*Configure Sync 0` or `*Configure Sync 1` from RISC OS to manually select
+vertical sync (`0`) or composite sync (`1`) on the VSYNC output. RISC iX
+appears to make poor choices if it's left in the default `Auto` setting.
+
+On my A3000 the winning combo seems to be VSYNC enabled (LK25 fitted), HSYNC
+as horzontal sync only (1-2 on LK24), and `Configure Sync 0`. This gives
+separate H and V sync outputs, that most monitors will accept. You may need
+to play with different combinations of LK26 and LK27 to get the right sync
+polarity for your monitor.
