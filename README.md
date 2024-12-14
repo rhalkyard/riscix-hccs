@@ -23,6 +23,8 @@ You will need:
 
 - Willingness and ability to build Arculator from source.
 
+- Basic knowledge of RISC OS and old Unix.
+
 - `hccspart.py` from this repo.
 
 - `!Zap` and HCCS `!IDEMgr` RISC OS applications in your Arculator HostFS.
@@ -42,19 +44,19 @@ You will need:
 
 ## Building Arculator
 
-For various reasons, the current released version of Arculator will not work
-for bootstrapping RISC iX. The Arculator code in the 'rhalkyard'
-branch at https://github.com/rhalkyard/arculator has the following
-modifications to make it possible:
+For various reasons, the current released version of Arculator will not work for
+bootstrapping RISC iX. The Arculator code in the 'rhalkyard' branch at
+https://github.com/rhalkyard/arculator has the following modifications to make
+it possible:
 
-- Adds emulation for the HCCS 8-bit IDE podule.
+- Emulation of the HCCS 8-bit IDE podule.
 
-- Removes the 1024-cylinder size limit on disc images.
+- Removed the 1024-cylinder size limit on disc images.
 
-- Replaces the built-in SLIRP implementation with libslirp - the built-in
+- Replaced the built-in SLIRP implementation with libslirp - the built-in
   version was old, and RISC iX's TCP/IP implementation could crash it.
 
-- Includes RISC OS and podule ROMs in the source tree (this is mostly just a
+- Included RISC OS and podule ROMs in the source tree (this is mostly just a
   quality of life improvement to make setup easier.)
 
 To build:
@@ -112,8 +114,8 @@ Open the maintenance menu again and choose "Single User." After a few
 moments, the RISC OS desktop will go away and RISC iX will dump you into a
 single-user-mode shell.
 
-Edit the following configuration files. Editors at your disposal include vi,
-and microEMACS (`uemacs`):
+Edit the following configuration files. Editors at your disposal include vi, and
+microEMACS (`uemacs`):
 
 `/etc/rc.net`:
 
@@ -131,7 +133,7 @@ and microEMACS (`uemacs`):
 
 `/etc/hosts`:
 
-- Change the IP address for host `riscix` to 10.0.2.15
+- Change the IP address for host `riscix` to 10.0.2.15.
 
 - Add an entry for your NFS server, since RISC iX does not support DNS out of
   the box, and NFS seems to want a hostname, not an IP address.
@@ -350,7 +352,8 @@ RMReinit RISCiXFS
 
 Note that if you open the 'Device Defaults' entry from the maintenance menu in
 `!RISCiX`, your device settings will get clobbered (since `!RISCiX` thinks
-they're invalid) and you will nave to run the above commands again.
+they're invalid) and you will nave to run the above commands again. It would be
+nice to patch the application to avoid this at some point.
 
 Now you should be able to boot RISC iX using your patched boot loader! If so,
 use a USB-to-IDE interface to write the disc image back to your A3000's hard
@@ -359,33 +362,45 @@ slowly! Why did you want to do this again?
 
 ## Other notes and neat tricks
 
-Don't use the AEH50 Ethernet II card. Its emulation appears to be buggy, with
-received packets occasionally being dropped.
+Don't use the AEH50 Ethernet II card in Arculator. Its emulation appears to be
+buggy, with received packets occasionally being dropped. The AEH54 Ethernet III
+card appears to work fine, though.
 
-In RISC iX, press the BREAK key to switch between virtual consoles.
+In RISC iX, press the BREAK key bring up a menu to select between virtual
+consoles (press BREAK again to make your selection and exit the menu).
 
-In a text console, press F3 to bring up a settings menu.
+In a text console, press F3 to bring up a terminal-emulator settings menu.
 
-Expect it to be incredibly, unbelievaby, almost unusably slow. Part of this
-is just that it was always a bit sluggish even on high-end systems, the IDE
-driver causes further performance issues - most Archimedes IDE hardware does
-not connect the `/IRQ` line, and so the driver must do polled I/O. Anything
-that causes a lot of swap activity (and with only 4MB of RAM and an
-enormous 32k page size, you'll be doing a lot of swapping), will bring the
-system to a crawl.
+Expect RISC iX to be slow - especially on an 8MHz 4MB machine. Part of this is
+just that it was always a bit sluggish even on high-end systems, using IDE
+introduces further performance issues - most Archimedes IDE hardware does not
+connect the `/IRQ` line, and so the driver must do polled I/O. Anything that
+causes a lot of swap activity will bring the system to a crawl - and with only
+4MB of RAM and an enormous 32kB page size, you'll be doing a lot of swapping.
 
-X11 is installed and can be started with `startx`, but it only really serves
-as an extreme example of the above performance issues.
+X11 is installed, though on the A3000, it is too slow to really be usable. You
+can launch it with `startx`, or get an XDM graphical login screen by logging in
+as the pseudo-user `x` with no password.
+
+Due to ARM's somehwat poor code density and the MEMC's colossal page size, RISC
+iX executables are huge. To mitigate this, binaries are stored compressed, and
+decompressed on the fly by the kernel, with an undocumented compression
+algorithm optimised for bit patterns found in ARM instructions. The `squeeze`
+and `unsqueeze` commands can be used to compress and decompress binaries on
+disc.
+
+`/bin` and `/sbin` are simply symlinks to their counterparts in `/usr` - so much
+for the idea of moving `/usr` to its own partition to allow for a smaller root
+(and thus a larger RISC OS partition).
 
 ### Video Sync
 
 If you get a garbled screen (or no sync at all) in RISC iX, try running
-`*Configure Sync 0` or `*Configure Sync 1` from RISC OS to manually select
-vertical sync (`0`) or composite sync (`1`) on the VSYNC output. RISC iX
-appears to make poor choices if it's left in the default `Auto` setting.
+`Configure Sync 0` from RISC OS to manually enable vertical sync output (as
+opposed to composite sync on VSYNC). RISC iX appears to make poor choices if
+it's left in the default `Auto` setting.
 
-On my A3000 the winning combo seems to be VSYNC enabled (LK25 fitted), HSYNC
-as horzontal sync only (1-2 on LK24), and `Configure Sync 0`. This gives
-separate H and V sync outputs, that most monitors will accept. You may need
-to play with different combinations of LK26 and LK27 to get the right sync
-polarity for your monitor.
+On my A3000 the winning combo for modern monitor compatibility seems to be
+`Configure Sync 0`, jumper on pins 1-2 of LK24, and jumpers installed on LK25,
+LK26 and LK27 (all of these links are underneath the floppy drive). This gives
+separate H and V sync outputs with negative polarity, matching the VGA standard.
